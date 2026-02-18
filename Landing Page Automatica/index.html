@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opus v2.0 | Ultra-Luxury Real Estate Architect</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- PDF Export Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Google Fonts: Bodoni Moda (Serif) & Maven Pro (Sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Maven+Pro:wght@400..900&display=swap"
+        rel="stylesheet">
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'serif': ['"Bodoni Moda"', 'serif'],
+                        'sans': ['"Maven Pro"', 'sans-serif'],
+                    },
+                    colors: {
+                        'champagne': '#C8B273',
+                        'mitre': {
+                            black: '#0A0A0A',
+                            gray: '#333333',
+                            light: '#F5F5F5',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .editor-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .editor-scroll::-webkit-scrollbar-track {
+            background: #0A0A0A;
+        }
+
+        .editor-scroll::-webkit-scrollbar-thumb {
+            background: #333;
+        }
+
+        /* Smooth Parallax Fix */
+        .parallax {
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        /* Hero Animation */
+        @keyframes subtleScale {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(1.05);
+            }
+        }
+
+        .hero-zoom {
+            animation: subtleScale 20s ease-in-out infinite alternate;
+        }
+
+        /* Custom Transition */
+        .page-transition {
+            transition: all 0.5s ease-in-out;
+        }
+
+        /* PDF Styles */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            .print-break {
+                page-break-before: always;
+            }
+        }
+
+        /* Map Filters */
+        .map-filter-light {
+            filter: grayscale(100%) invert(0) contrast(1.2);
+            mix-blend-mode: multiply;
+        }
+
+        .map-filter-dark {
+            filter: grayscale(100%) invert(90%) hue-rotate(180deg) brightness(0.9);
+            mix-blend-mode: exclusion;
+        }
+
+        /* Grid Pattern */
+        .bg-grid-pattern {
+            background-size: 40px 40px;
+            background-image:
+                linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        }
+
+        .light .bg-grid-pattern {
+            background-image:
+                linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+        }
+    </style>
+</head>
+
+<body class="bg-[#0A0A0A] text-white antialiased" x-data="opusApp()">
+
+    <!-- ========================================== -->
+    <!-- VIEW: EDITOR (Architect Mode) -->
+    <!-- ========================================== -->
+    <div x-show="!previewMode" x-transition.opacity
+        class="min-h-screen flex flex-col max-w-lg mx-auto bg-mitre-black relative border-x border-white/5 shadow-2xl">
+
+        <!-- Header -->
+        <header
+            class="p-8 sticky top-0 z-20 bg-mitre-black/95 backdrop-blur border-b border-white/5 flex justify-between items-center">
+            <div>
+                <h1 class="font-serif text-3xl text-white italic tracking-tighter">Opus<span
+                        class="text-champagne not-italic ml-1">v3.0</span></h1>
+                <p class="text-[9px] text-gray-500 uppercase tracking-[0.4em] mt-1 font-sans">Professional Architect</p>
+            </div>
+            <div class="flex gap-4 items-center">
+                <span x-show="savedMsg" x-transition
+                    class="text-[9px] text-champagne uppercase tracking-widest mr-4 animate-pulse"><i
+                        class="fa-solid fa-cloud-arrow-up mr-1"></i> Rascunho Salvo</span>
+                <button @click="generateRandomProperty()"
+                    class="text-[10px] uppercase tracking-widest text-champagne hover:text-white transition-colors border border-champagne/30 px-3 py-1 rounded-full"><i
+                        class="fa-solid fa-dice mr-1"></i> Gerar Exemplo</button>
+                <button @click="resetData()"
+                    class="text-[10px] uppercase tracking-widest text-gray-600 hover:text-red-400 transition-colors">Reset</button>
+            </div>
+        </header>
+
+        <!-- Form Content -->
+        <main class="flex-1 overflow-y-auto editor-scroll p-8 space-y-12 pb-32">
+
+            <!-- THEME & STATUS -->
+            <section class="grid grid-cols-2 gap-6 bg-white/5 p-6 rounded-sm border border-white/5">
+                <div>
+                    <label class="block text-[10px] text-champagne uppercase tracking-widest mb-3">Estilo da
+                        Página</label>
+                    <div class="flex bg-black p-1 rounded-sm gap-1">
+                        <button @click="property.theme = 'light'"
+                            :class="property.theme === 'light' ? 'bg-white text-black' : 'text-gray-500'"
+                            class="flex-1 py-2 text-[10px] uppercase tracking-widest transition-all">Light</button>
+                        <button @click="property.theme = 'dark'"
+                            :class="property.theme === 'dark' ? 'bg-champagne text-white' : 'text-gray-500'"
+                            class="flex-1 py-2 text-[10px] uppercase tracking-widest transition-all">Noir</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] text-champagne uppercase tracking-widest mb-3">Status do
+                        Imóvel</label>
+                    <select x-model="property.status"
+                        class="w-full bg-black border border-white/10 p-2 text-[10px] uppercase tracking-widest text-white outline-none focus:border-champagne">
+                        <option value="">Nenhum Selo</option>
+                        <option value="Disponível">Disponível</option>
+                        <option value="Reservado">Reservado</option>
+                        <option value="Oportunidade">Oportunidade</option>
+                        <option value="Exclusividade">Exclusividade</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Identity -->
+            <section class="space-y-6">
+                <h2 class="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-400 border-b border-white/5 pb-2">
+                    Identidade & Conceito</h2>
+                <div class="space-y-4">
+                    <input type="text" x-model="property.title"
+                        class="w-full bg-transparent border-b border-white/10 py-3 text-white font-serif text-2xl italic placeholder-gray-800 outline-none focus:border-champagne transition-colors"
+                        placeholder="Nome da Obra">
+                    <input type="text" x-model="property.subtitle"
+                        class="w-full bg-transparent border-b border-white/10 py-2 text-white text-sm font-light placeholder-gray-800 outline-none focus:border-champagne"
+                        placeholder="Frase de Impacto">
+                    <input type="text" x-model="property.location"
+                        class="w-full bg-transparent border-b border-white/10 py-2 text-white text-sm font-light placeholder-gray-800 outline-none focus:border-champagne"
+                        placeholder="Bairro / Endereço Privilegiado">
+
+                    <div>
+                        <label class="block text-[9px] text-gray-500 uppercase tracking-widest mb-1">Google Maps
+                            (Embed URL/Src)</label>
+                        <input type="text" x-model="property.mapUrl"
+                            class="w-full bg-transparent border-b border-white/10 py-2 text-white text-xs font-light placeholder-gray-800 outline-none focus:border-champagne"
+                            placeholder="https://www.google.com/maps/embed?pb=...">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Specs (Numeric Only) -->
+            <section class="space-y-4">
+                <h2 class="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-400 border-b border-white/5 pb-2">
+                    Números da Residência</h2>
+                <div class="grid grid-cols-2 gap-8">
+                    <div>
+                        <label class="block text-[9px] text-gray-500 uppercase tracking-widest mb-2">Investimento
+                            (R$)</label>
+                        <input type="number" x-model.number="property.price"
+                            class="w-full bg-transparent border-b border-white/10 py-2 text-white font-serif text-xl outline-none focus:border-champagne"
+                            placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] text-gray-500 uppercase tracking-widest mb-2">Metragem
+                            (m²)</label>
+                        <input type="number" x-model.number="property.area"
+                            class="w-full bg-transparent border-b border-white/10 py-2 text-white text-lg outline-none focus:border-champagne"
+                            placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] text-gray-500 uppercase tracking-widest mb-2">Quartos
+                            Totais</label>
+                        <input type="number" x-model.number="property.rooms"
+                            class="w-full bg-transparent border-b border-white/10 py-2 text-white text-lg outline-none focus:border-champagne"
+                            placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] text-gray-500 uppercase tracking-widest mb-2">Suítes
+                            Privativas</label>
+                        <input type="number" x-model.number="property.bedrooms"
+                            class="w-full bg-transparent border-b border-white/10 py-2 text-white text-lg outline-none focus:border-champagne"
+                            placeholder="0">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[9px] text-gray-500 uppercase tracking-widest mb-2">Vagas de
+                            Garagem</label>
+                        <input type="number" x-model.number="property.garage"
+                            class="w-full bg-transparent border-b border-white/10 py-2 text-white text-lg outline-none focus:border-champagne"
+                            placeholder="0">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Multimedia -->
+            <section class="space-y-6">
+                <h2 class="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-400 border-b border-white/5 pb-2">
+                    Mídia & Conteúdo</h2>
+
+                <div class="space-y-4">
+                    <div class="bg-white/5 p-4 border border-white/5">
+                        <label class="block text-[10px] text-champagne uppercase tracking-widest mb-3">Imagem de Capa
+                            (Hero)</label>
+                        <input type="text" x-model="property.heroImage"
+                            class="w-full bg-black/50 p-2 text-xs border border-white/5 outline-none focus:border-champagne"
+                            placeholder="URL da foto principal">
+                    </div>
+
+                    <div class="bg-white/5 p-4 border border-white/5">
+                        <label class="block text-[10px] text-champagne uppercase tracking-widest mb-3">Vídeo / Tour
+                            Virtual</label>
+                        <input type="text" x-model="property.videoUrl"
+                            class="w-full bg-black/50 p-2 text-xs border border-white/5 outline-none focus:border-champagne"
+                            placeholder="URL YouTube/Vimeo">
+                        <p class="text-[8px] text-gray-600 mt-2 uppercase tracking-widest">Deixe vazio se não houver
+                            vídeo.</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="block text-[10px] text-gray-500 uppercase tracking-widest">Galeria de
+                            Fotos</label>
+                        <template x-for="(img, index) in property.gallery" :key="'gal'+index">
+                            <div class="flex gap-2 items-center">
+                                <input type="text" x-model="property.gallery[index]"
+                                    class="flex-1 bg-white/5 p-2 text-[10px] border border-white/5 outline-none text-gray-300">
+                                <button @click="property.gallery.splice(index, 1)"
+                                    class="text-red-500/50 hover:text-red-500"><i
+                                        class="fa-solid fa-times"></i></button>
+                            </div>
+                        </template>
+                        <button @click="property.gallery.push('')"
+                            class="w-full py-2 border border-dashed border-white/10 text-[9px] uppercase tracking-[0.3em] text-gray-500 hover:text-champagne transition-colors">+
+                            Adicionar Foto</button>
+                    </div>
+
+                    <div class="space-y-3 mt-6 pt-6 border-t border-white/5">
+                        <label class="block text-[10px] text-gray-500 uppercase tracking-widest">Plantas
+                            (Floorplans)</label>
+                        <template x-for="(img, index) in property.floorplans" :key="'plan'+index">
+                            <div class="flex gap-2 items-center">
+                                <input type="text" x-model="property.floorplans[index]"
+                                    class="flex-1 bg-white/5 p-2 text-[10px] border border-white/5 outline-none text-gray-300">
+                                <button @click="property.floorplans.splice(index, 1)"
+                                    class="text-red-500/50 hover:text-red-500"><i
+                                        class="fa-solid fa-times"></i></button>
+                            </div>
+                        </template>
+                        <button @click="property.floorplans.push('')"
+                            class="w-full py-2 border border-dashed border-white/10 text-[9px] uppercase tracking-[0.3em] text-gray-500 hover:text-blue-400 transition-colors">+
+                            Adicionar Planta</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Narrative -->
+            <section class="space-y-4">
+                <div class="flex justify-between items-end border-b border-white/5 pb-2">
+                    <h2 class="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-400">Narrativa Emocional</h2>
+                    <button @click="generateMagicCopy()"
+                        class="text-[9px] text-champagne uppercase tracking-widest hover:text-white transition-colors"><i
+                            class="fa-solid fa-wand-magic-sparkles mr-1"></i> Auto-Magia</button>
+                </div>
+                <textarea x-model="property.description" rows="6"
+                    class="w-full bg-white/5 p-4 text-sm font-light leading-relaxed text-gray-300 border border-white/5 outline-none focus:border-champagne resize-none"
+                    placeholder="Conte a história do imóvel..."></textarea>
+            </section>
+
+        </main>
+
+        <!-- Fixed Footer Actions -->
+        <div class="absolute bottom-6 left-6 right-6">
+            <button @click="previewMode = true; window.scrollTo(0,0)"
+                class="w-full bg-white hover:bg-champagne text-mitre-black font-serif italic text-xl h-14 transition-colors duration-500 flex items-center justify-center">
+                Gerar Opus
+            </button>
+        </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW: PREVIEW (The Landing Page) -->
+    <!-- ========================================== -->
+    <div x-show="previewMode" x-cloak
+        :class="property.theme === 'dark' ? 'dark bg-mitre-black text-white' : 'bg-mitre-light text-mitre-black'"
+        class="min-h-screen font-sans page-transition selection:bg-champagne selection:text-white"
+        id="opus-page-output">
+
+        <!-- ================= -->
+        <!-- Admin Controls (No Print) -->
+        <!-- ================= -->
+        <div class="fixed top-8 left-8 right-8 z-50 flex justify-between items-center no-print">
+            <button @click="previewMode = false"
+                class="bg-black/50 backdrop-blur px-6 py-2 rounded-full text-[10px] uppercase tracking-[0.3em] text-white border border-white/10 hover:bg-white hover:text-black transition-all">
+                [ Editar Projeto ]
+            </button>
+            <div class="flex gap-4">
+                <button @click="downloadSource()"
+                    class="bg-mitre-black flex items-center gap-2 px-6 py-2 rounded-full text-[10px] uppercase tracking-[0.3em] text-white border border-white/20 hover:bg-white hover:text-black transition-all">
+                    <i class="fa-solid fa-code"></i> Baixar HTML
+                </button>
+                <button @click="downloadPDF()"
+                    class="bg-champagne inline-flex items-center gap-2 px-6 py-2 rounded-full text-[10px] uppercase tracking-[0.3em] text-white shadow-lg hover:shadow-champagne/30 transition-all active:scale-95">
+                    <i class="fa-solid fa-file-pdf"></i> Baixar PDF (WhatsApp)
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= -->
+        <!-- 1. HERO SECTION -->
+        <!-- ================= -->
+        <section class="relative h-screen flex flex-col justify-center items-center overflow-hidden">
+            <!-- Parallax Hero -->
+            <div class="absolute inset-0 z-0">
+                <div class="absolute inset-0 bg-black/40 z-10 transition-colors"
+                    :class="property.theme === 'dark' ? 'bg-black/60' : 'bg-black/30'"></div>
+                <img :src="property.heroImage" class="w-full h-full object-cover hero-zoom" alt="Hero View">
+            </div>
+
+            <!-- Exclusivity Badge -->
+            <div x-show="property.status" x-transition
+                class="absolute top-1/4 z-30 opacity-80 border border-white/30 backdrop-blur-sm px-6 py-2">
+                <span class="text-[10px] uppercase tracking-[0.5em] text-white font-bold"
+                    x-text="property.status"></span>
+            </div>
+
+            <div class="relative z-20 text-center px-6 max-w-5xl">
+                <p class="text-[10px] md:text-xs uppercase tracking-[0.6em] text-white/80 mb-8 border-b border-white/20 inline-block pb-4 animate-fade-up"
+                    x-text="property.location"></p>
+                <h1 class="font-serif text-6xl md:text-9xl text-white italic leading-none mb-10 drop-shadow-2xl animate-fade-up"
+                    style="animation-delay: 0.2s" x-text="property.title"></h1>
+                <p class="text-xl md:text-2xl text-white/90 font-light max-w-2xl mx-auto italic tracking-wide animate-fade-up"
+                    style="animation-delay: 0.4s" x-text="property.subtitle"></p>
+            </div>
+
+            <!-- Scroll Indicator -->
+            <div class="absolute bottom-12 z-20 animate-bounce cursor-pointer"
+                @click="document.getElementById('video-section').scrollIntoView()">
+                <div class="w-[1px] h-12 bg-white/30 mx-auto"></div>
+                <span class="text-[9px] uppercase tracking-[0.3em] text-white/50 block mt-4">Legacy</span>
+            </div>
+        </section>
+
+        <!-- ================= -->
+        <!-- 2. VIDEO / TOUR (If exists) -->
+        <!-- ================= -->
+        <section id="video-section" x-show="property.videoUrl"
+            class="py-32 px-6 bg-white dark:bg-black transition-colors">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-16">
+                    <span class="text-[10px] uppercase tracking-[0.5em] text-champagne mb-4 block">Experiência
+                        Imersiva</span>
+                    <h2 class="font-serif text-4xl italic dark:text-white">Motion & Perspective</h2>
+                </div>
+                <div
+                    class="aspect-video w-full bg-mitre-black shadow-2xl overflow-hidden rounded-sm border-[0.5px] border-white/5">
+                    <iframe :src="getEmbedUrl(property.videoUrl)" class="w-full h-full" frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= -->
+        <!-- 3. SPECS (Standardized) -->
+        <!-- ================= -->
+        <section class="py-24 border-y border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-[#0c0c0c]">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="grid grid-cols-2 md:grid-cols-5 divide-x divide-gray-200 dark:divide-white/5">
+                    <template x-for="item in getMainSpecs()" :key="item.label">
+                        <div class="text-center py-10 group hover:bg-white dark:hover:bg-mitre-black transition-all">
+                            <p class="text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-4 font-sans"
+                                x-text="item.label"></p>
+                            <h3 class="font-serif text-3xl italic text-mitre-black dark:text-white transition-colors"
+                                x-html="item.value"></h3>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= -->
+        <!-- 4. NARRATIVE -->
+        <!-- ================= -->
+        <section class="py-40 px-6 md:px-20 max-w-4xl mx-auto text-center">
+            <div class="w-16 h-[1px] bg-champagne mx-auto mb-12"></div>
+            <h2 class="font-serif text-4xl md:text-5xl italic text-mitre-black dark:text-white">A Sintonia
+                Perfeita</h2>
+            <p class="text-gray-600 dark:text-gray-400 leading-[2.4] font-light text-lg md:text-2xl whitespace-pre-line italic"
+                x-text="property.description"></p>
+        </section>
+
+        <!-- ================= -->
+        <!-- 5. GALERIA (LIGHTBOX) -->
+        <!-- ================= -->
+        <section class="py-32 bg-white dark:bg-mitre-black">
+            <div class="max-w-[1700px] mx-auto px-6">
+                <!-- Gallery Header -->
+                <div class="flex items-center justify-between mb-20 border-b border-gray-100 dark:border-white/5 pb-8">
+                    <h2 class="font-serif text-4xl md:text-6xl italic text-mitre-black dark:text-white">Perspectiva
+                    </h2>
+                    <span class="text-[10px] uppercase tracking-[0.4em] text-gray-400">01 — Gallery</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <template x-for="(img, index) in property.gallery" :key="'view'+index">
+                        <div @click="openLightbox(index)"
+                            class="relative aspect-[4/5] overflow-hidden group cursor-pointer bg-gray-100 dark:bg-gray-900 border-[0.5px] border-black/5 dark:border-white/5">
+                            <img :src="img"
+                                class="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110"
+                                loading="lazy">
+                            <div
+                                class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-700 flex items-center justify-center">
+                                <span
+                                    class="bg-white/20 backdrop-blur-md px-4 py-2 text-white border border-white/20 text-[9px] uppercase tracking-[0.3em] opacity-0 group-hover:opacity-100 transition-opacity">Ver
+                                    Detalhes</span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= -->
+        <!-- 5.1 BLUEPRINTS (FLOORPLANS) -->
+        <!-- ================= -->
+        <section x-show="property.floorplans.length > 0"
+            class="py-20 bg-gray-50 dark:bg-[#080808] border-y border-gray-200 dark:border-white/5 bg-grid-pattern">
+            <div class="max-w-6xl mx-auto px-6">
+                <div class="text-center mb-16">
+                    <span class="text-[10px] uppercase tracking-[0.4em] text-gray-400 block mb-4">Arquitetura
+                        Técnica</span>
+                    <h2 class="font-serif text-4xl italic text-mitre-black dark:text-white">Blueprints & Layout</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <template x-for="(plan, idx) in property.floorplans" :key="'plan'+idx">
+                        <div class="bg-white dark:bg-black p-4 shadow-lg border border-gray-100 dark:border-white/5">
+                            <img :src="plan"
+                                class="w-full h-auto opacity-90 hover:opacity-100 transition-opacity filter dark:invert dark:grayscale"
+                                alt="Floorplan">
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= -->
+        <!-- 5.2 GOOGLE MAPS -->
+        <!-- ================= -->
+        <section x-show="property.mapUrl" class="w-full h-[500px] overflow-hidden relative grayscale">
+            <div class="absolute inset-0 z-10 pointer-events-none border-y border-white/10"
+                :class="property.theme === 'dark' ? 'map-filter-dark' : 'map-filter-light'"></div>
+            <iframe :src="property.mapUrl" width="100%" height="100%" style="border:0;" allowfullscreen=""
+                loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <div
+                class="absolute bottom-10 left-10 z-20 bg-white dark:bg-black px-8 py-4 shadow-2xl border border-gray-100 dark:border-white/10">
+                <p class="text-[9px] uppercase tracking-[0.4em] text-gray-500 mb-2">Localização</p>
+                <p class="font-serif text-xl italic text-mitre-black dark:text-white" x-text="property.location"></p>
+            </div>
+        </section>
+
+        <!-- ================= -->
+        <!-- 6. AGENT & CLOSING -->
+        <!-- ================= -->
+        <section class="py-40 bg-gray-50 dark:bg-black overflow-hidden relative">
+            <!-- Background Text Decoration -->
+            <div
+                class="absolute inset-0 pointer-events-none opacity-[0.02] flex items-center justify-center overflow-hidden">
+                <span
+                    class="text-[40rem] font-serif italic text-mitre-black dark:text-white transform translate-x-1/2">Opus.</span>
+            </div>
+
+            <div class="max-w-2xl mx-auto px-6 text-center relative z-10">
+                <div
+                    class="w-28 h-28 mx-auto mb-12 rounded-full overflow-hidden grayscale hover:grayscale-0 transition-all duration-1000 border border-champagne p-1 bg-white">
+                    <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80"
+                        alt="Agent" class="w-full h-full object-cover rounded-full">
+                </div>
+                <p class="text-[10px] text-gray-500 uppercase tracking-[0.5em] mb-4">Curadoria de Patrimônio</p>
+                <h3 class="font-serif text-4xl text-mitre-black dark:text-white italic mb-16">Thierry & Equipe</h3>
+
+                <div class="flex flex-col gap-6 items-center">
+                    <a href="#"
+                        class="inline-flex items-center gap-4 bg-mitre-black dark:bg-white text-white dark:text-black px-12 py-5 text-[11px] font-bold uppercase tracking-[0.3em] hover:bg-champagne dark:hover:bg-champagne hover:text-white transition-all shadow-xl">
+                        Acesso ao WhatsApp <i class="fa-brands fa-whatsapp"></i>
+                    </a>
+                    <p class="text-[9px] font-light text-gray-500 uppercase tracking-[0.2em]">Atendimento Privativo &
+                        Agendamento</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer
+            class="py-16 text-center text-gray-400 bg-white dark:bg-mitre-black border-t border-gray-100 dark:border-white/5">
+            <span class="font-serif italic text-2xl text-mitre-black dark:text-white">Opus.</span>
+            <p class="text-[8px] uppercase tracking-[0.4em] mt-4 opacity-50">© 2024 Arquiteto Digital — Todos os
+                direitos reservados</p>
+        </footer>
+
+        <!-- ========================================== -->
+        <!-- COMPONENT: LIGHTBOX MODAL -->
+        <!-- ========================================== -->
+        <div x-show="lightboxOpen" x-transition.opacity x-cloak
+            class="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center cursor-default no-print">
+
+            <!-- Controls -->
+            <button @click="lightboxOpen = false"
+                class="absolute top-8 right-8 text-white/50 hover:text-white text-2xl transition-all z-[110]"><i
+                    class="fa-solid fa-times"></i></button>
+            <button @click="prevImage()"
+                class="absolute left-8 text-white/30 hover:text-white text-4xl transition-all z-[110]"><i
+                    class="fa-solid fa-chevron-left"></i></button>
+            <button @click="nextImage()"
+                class="absolute right-8 text-white/30 hover:text-white text-4xl transition-all z-[110]"><i
+                    class="fa-solid fa-chevron-right"></i></button>
+
+            <!-- Image -->
+            <div class="max-w-[90vw] max-h-[85vh] flex flex-col items-center">
+                <img :src="property.gallery[activeImageIndex]"
+                    class="max-w-full max-h-full object-contain shadow-2xl animate-fade-up">
+                <p class="text-white/40 text-[10px] uppercase tracking-[0.5em] mt-10"
+                    x-text="(activeImageIndex + 1) + ' / ' + property.gallery.length"></p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JS LOGIC -->
+    <script>
+        function opusApp() {
+            return {
+                previewMode: false,
+                lightboxOpen: false,
+                activeImageIndex: 0,
+                savedMsg: '',
+                property: {
+                    theme: 'light',
+                    status: 'Exclusividade',
+                    title: '',
+                    subtitle: '',
+                    location: '',
+                    mapUrl: '',
+                    videoUrl: '',
+                    price: null,
+                    area: null,
+                    rooms: null,
+                    bedrooms: null,
+                    garage: null,
+                    description: '',
+                    heroImage: 'https://images.unsplash.com/photo-1628592102171-ade71607f2df?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=90',
+                    gallery: [
+                        'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1253&q=80',
+                        'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1253&q=80',
+                        'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1074&q=80'
+                    ],
+                    floorplans: [],
+                    highlights: []
+                },
+
+                init() {
+                    const saved = localStorage.getItem('opus_v3_autosave');
+                    if (saved) {
+                        try {
+                            const parsed = JSON.parse(saved);
+                            // Merge to ensure new fields like floorplans exist if restoring old save
+                            this.property = {
+                                ...this.property,
+                                ...parsed
+                            };
+                            if (!this.property.floorplans) this.property.floorplans = [];
+                            if (!this.property.mapUrl) this.property.mapUrl = '';
+                            console.log('Restored from Auto-Save');
+                        } catch (e) {
+                            console.error('Save Corrupted');
+                        }
+                    }
+
+                    this.$watch('property', (val) => {
+                        localStorage.setItem('opus_v3_autosave', JSON.stringify(val));
+                        this.savedMsg = 'Salvo';
+                        setTimeout(() => this.savedMsg = '', 2000);
+                    });
+                },
+
+                resetData() {
+                    if (confirm('Deseja deletar todo o projeto e começar do zero?')) {
+                        localStorage.removeItem('opus_v3_autosave');
+                        this.property = {
+                            theme: 'light',
+                            status: '',
+                            title: '',
+                            subtitle: '',
+                            location: '',
+                            mapUrl: '',
+                            videoUrl: '',
+                            price: null,
+                            area: null,
+                            rooms: null,
+                            bedrooms: null,
+                            garage: null,
+                            description: '',
+                            heroImage: '',
+                            gallery: [],
+                            floorplans: [],
+                            highlights: []
+                        };
+                    }
+                },
+
+                generateRandomProperty() {
+                    const titles = ["Mansão Horizon", "Reserva Imperial", "Penthouse Sky View", "Villa Toscana"];
+                    const locations = ["Jardins, São Paulo", "Barra da Tijuca, Rio", "Lago Sul, Brasília", "Alphaville, Barueri"];
+                    const subtitles = ["O ápice da exclusividade urbana", "Um refúgio particular em meio à natureza", "Arquitetura que desafia o comum", "Onde o luxo encontra a serenidade"];
+
+                    const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+                    this.property = {
+                        theme: 'dark',
+                        status: 'Oportunidade',
+                        title: rand(titles),
+                        subtitle: rand(subtitles),
+                        location: rand(locations),
+                        mapUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.197587029532!2d-46.65698368440698!3d-23.56134886747587!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce59c8da0aa365%3A0x4f2ca31e7d7fc2e6!2sAv.%20Paulista%2C%20S%C3%A3o%20Paulo%20-%20SP!5e0!3m2!1spt-BR!2sbr!4v1628600000000!5m2!1spt-BR!2sbr',
+                        videoUrl: 'https://www.youtube.com/watch?v=LXb3EKWsInQ', // 4K Real Estate Video
+                        price: Math.floor(Math.random() * 15000000) + 5000000,
+                        area: Math.floor(Math.random() * 500) + 300,
+                        rooms: 5,
+                        bedrooms: 4,
+                        garage: 6,
+                        description: '',
+                        heroImage: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=90',
+                        gallery: [
+                            'https://images.unsplash.com/photo-1613977257363-707ba9348227?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=90',
+                            'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1253&q=80',
+                            'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1253&q=80'
+                        ],
+                        floorplans: [
+                            'https://cdn.pixabay.com/photo/2014/07/31/22/07/architectural-design-407000_1280.jpg',
+                            'https://cdn.pixabay.com/photo/2014/07/10/17/17/bedroom-389254_1280.jpg'
+                        ],
+                        highlights: []
+                    };
+                    this.generateMagicCopy(); // Auto-fill description
+                },
+
+                openLightbox(index) {
+                    this.activeImageIndex = index;
+                    this.lightboxOpen = true;
+                },
+
+                nextImage() {
+                    this.activeImageIndex = (this.activeImageIndex + 1) % this.property.gallery.length;
+                },
+
+                prevImage() {
+                    this.activeImageIndex = (this.activeImageIndex - 1 + this.property.gallery.length) % this.property.gallery.length;
+                },
+
+                getEmbedUrl(url) {
+                    if (!url) return '';
+
+                    // Detect origin for YouTube compliance (helps with file:// protocol issues)
+                    const origin = window.location.origin === 'null' ? '*' : window.location.origin;
+
+                    // YouTube Handling
+                    const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+                    const ytMatch = url.match(ytRegex);
+                    if (ytMatch && ytMatch[1]) {
+                        // Using youtube-nocookie and adding origin/enablejsapi to fix Error 153
+                        return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?rel=0&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
+                    }
+
+                    // Vimeo Handling
+                    const vimeoRegex = /(?:vimeo\.com\/|player\.vimeo\.com\/video\/)([0-9]+)/;
+                    const vimeoMatch = url.match(vimeoRegex);
+                    if (vimeoMatch && vimeoMatch[1]) {
+                        return `https://player.vimeo.com/video/${vimeoMatch[1]}?title=0&byline=0&portrait=0`;
+                    }
+
+                    return url;
+                },
+
+                getMainSpecs() {
+                    const formatBrl = (val) => {
+                        if (!val) return 'Sob Consulta';
+                        return new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                            maximumFractionDigits: 0
+                        }).format(val);
+                    };
+                    return [
+                        { label: 'Privativa', value: this.property.area ? `${this.property.area}m<sup class="text-[10px] italic">2</sup>` : '--' },
+                        { label: 'Dormitórios', value: this.property.rooms || '--' },
+                        { label: 'Suítes Altas', value: this.property.bedrooms || '--' },
+                        { label: 'Vagas Livres', value: this.property.garage || '--' },
+                        { label: 'Investimento', value: formatBrl(this.property.price) }
+                    ];
+                },
+
+                generateMagicCopy() {
+                    if (!this.property.title) {
+                        alert("Nomeie a Obra primeiro.");
+                        return;
+                    }
+                    const area = this.property.area ? `${this.property.area}m²` : 'metragem impecável';
+                    const rooms = this.property.rooms ? `${this.property.rooms} dormitórios` : 'ambientes privativos';
+
+                    this.property.description = `A ${this.property.title} é a personificação do arquétipo Mitre: o encontro entre a sofisticação urbana e o refúgio particular. \n\nCom seus ${area} banhados por iluminação natural, esta residência em ${this.property.location || 'localização soberana'} foi desenhada para elevar os padrões de convivência. Seus ${rooms} preservam a intimidade, enquanto as áreas sociais respiram fluidez e elegância.\n\nUm legado para quem busca não apenas morar, mas colecionar experiências de vida extraordinárias.`;
+                },
+
+                async downloadPDF() {
+                    const element = document.getElementById('opus-page-output');
+                    // clone to remove toolbar if needed or handle styles
+                    const options = {
+                        margin: 0,
+                        filename: `Opus_${this.property.title || 'Apresentacao'}.pdf`,
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, useCORS: true },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    };
+
+                    try {
+                        await html2pdf().set(options).from(element).save();
+                    } catch (err) {
+                        alert('Erro ao gerar PDF. Certifique-se de que todas as imagens são URLs públicas acessíveis.');
+                        console.error(err);
+                    }
+                },
+
+                downloadSource() {
+                    const data = {
+                        ...this.property
+                    };
+                    // Create a standalone HTML string
+                    const htmlContent = `<!DOCTYPE html>
+<html lang="pt-BR" class="${data.theme === 'dark' ? 'dark' : ''}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${data.title} | Opus Presentation</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"><\/script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Maven+Pro:wght@400..900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { 'serif': ['"Bodoni Moda"', 'serif'], 'sans': ['"Maven Pro"', 'sans-serif'], }, colors: { 'champagne': '#C8B273', 'mitre': { black: '#0A0A0A', gray: '#333333', light: '#F5F5F5', } } } } }
+    <\/script>
+    <style>
+        [x-cloak] { display: none !important; }
+        html { scroll-behavior: smooth; }
+        .parallax { background-attachment: fixed; }
+        .hero-zoom { animation: subtleScale 20s ease-in-out infinite alternate; }
+        @keyframes subtleScale { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
+        .map-filter-light { filter: grayscale(100%) invert(0) contrast(1.2); mix-blend-mode: multiply; }
+        .map-filter-dark { filter: grayscale(100%) invert(90%) hue-rotate(180deg) brightness(0.9); mix-blend-mode: exclusion; }
+        .bg-grid-pattern { background-size: 40px 40px; background-image: linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px); }
+        .light .bg-grid-pattern { background-image: linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px); }
+    </style>
+</head>
+<body class="bg-mitre-black text-white antialiased" x-data="exportedOpus()">
+    <!-- PREVIEW CONTENT -->
+    <div :class="property.theme === 'dark' ? 'dark bg-mitre-black text-white' : 'bg-mitre-light text-mitre-black'" class="min-h-screen font-sans selection:bg-champagne selection:text-white">
+        ${document.getElementById('opus-page-output').innerHTML}
+    </div>
+
+    <!-- CLEANED SCRIPT -->
+    <script>
+        function exportedOpus() {
+            return {
+                previewMode: true,
+                lightboxOpen: false,
+                activeImageIndex: 0,
+                property: ${JSON.stringify(data)},
+                openLightbox(index) { this.activeImageIndex = index; this.lightboxOpen = true; },
+                nextImage() { this.activeImageIndex = (this.activeImageIndex + 1) % this.property.gallery.length; },
+                prevImage() { this.activeImageIndex = (this.activeImageIndex - 1 + this.property.gallery.length) % this.property.gallery.length; },
+                getEmbedUrl(url) {
+                    if (!url) return '';
+                    const origin = window.location.origin === 'null' ? '*' : window.location.origin;
+                    const ytRegex = /(?:youtube\\.com\\/(?:[^\\/]+\\/.+\\/|(?:v|e(?:mbed)?)\\/|.*[?&]v=)|youtu\\.be\\/)([^"&?\/\\\\s]{11})/i;
+                    const ytMatch = url.match(ytRegex);
+                    if (ytMatch && ytMatch[1]) return \`https://www.youtube-nocookie.com/embed/\${ytMatch[1]}?rel=0&enablejsapi=1&origin=\${encodeURIComponent(origin)}\`;
+                    const vimeoRegex = /(?:vimeo\\.com\\/|player\\.vimeo\\.com\\/video\\/)([0-9]+)/;
+                    const vimeoMatch = url.match(vimeoRegex);
+                    if (vimeoMatch && vimeoMatch[1]) return \`https://player.vimeo.com/video/\${vimeoMatch[1]}?title=0&byline=0&portrait=0\`;
+                    return url;
+                },
+                getMainSpecs() {
+                    const formatBrl = (val) => {
+                        if (!val) return 'Sob Consulta';
+                        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(val);
+                    };
+                    return [
+                        { label: 'Privativa', value: this.property.area ? \`\${this.property.area}m<sup class="text-[10px] italic">2</sup>\` : '--' },
+                        { label: 'Dormitórios', value: this.property.rooms || '--' },
+                        { label: 'Suítes Altas', value: this.property.bedrooms || '--' },
+                        { label: 'Vagas Livres', value: this.property.garage || '--' },
+                        { label: 'Investimento', value: formatBrl(this.property.price) }
+                    ];
+                }
+            }
+        }
+    <\/script>
+    <style> .no-print { display: none !important; } </style>
+</body>
+</html>`;
+
+                    const blob = new Blob([htmlContent], {
+                        type: 'text/html'
+                    });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Opus_Export_${this.property.title || 'Project'}.html`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
